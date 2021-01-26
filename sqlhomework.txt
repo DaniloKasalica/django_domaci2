@@ -1,0 +1,77 @@
+ 
+1.
+a) Izlistati naslove filmova, zajedno sa brojem različitih gradova u kojima su projektovani,
+pod uslovom da je taj broj veći od 5.
+b) Naći film koji je imao najveći broj projekcija.
+c) Naći filmove koji su projektovani u svakom bioskopu.
+d) Izlistati parove filmova koji su projektovani u istim salama. *
+e) Naći gradove u kojima se prikazivao film koji je do sada imao najveći broj projekcija.
+f) Naći parove FID, BID tako da je film sa ključem FID bar 3 puta prikazan u bioskopu sa
+ključem BID. *
+g) Naći grad u kom je održana najposjećenija projekcija nekog filma.
+h) Naći film koji je u svakoj sali projektovan bar 2 puta. *
+i) Naći gradove u kojima su prikazani svi filmovi.
+j) Odrediti u kom bioskopu se nalazi najposjećenija sala. Napomena: najposjećenija sala je
+ona u kojoj je bio najveći broj gledalaca, gledano ukupno po svim projekcijama u njoj.
+
+
+a) SELECT Naslov FROM Film WHERE (select count(*) from Projekcija where Projekcija.FID = Film.FID) >5;
+
+b) SELECT Naslov,FID FROM Film WHERE
+ (select count(*) from Projekcija where Projekcija.FID = Film.FID) = 
+ (select count(*) from Projekcija group by Projekcija.FID order by count(*) DESC limit 1 );
+
+c) SELECT Film.Naslov as Naslov FROM Projekcija,Film,Sala,Bioskop where (Projekcija.FID = Film.FID )
+ AND Projekcija.Broj = Sala.Broj AND Bioskop.BID = Sala.BID AND 
+  (select count(*) from Bioskop) = (select count(DISTINCT BID) from Sala,Projekcija where Sala.Broj = Projekcija.Broj
+ AND Projekcija.FID = Film.FID) group by Naslov;
+
+d)
+
+e)select Bioskop.Naziv as Naziv from Projekcija, Film, Sala,Bioskop WHERE 
+Projekcija.FID = Film.FID AND Sala.Broj = Projekcija.Broj AND Bioskop.BID = Sala.BID AND
+ (select count(*) from Projekcija WHERE Projekcija.FID = Film.FID) = (select COUNT('FID') as broj from Projekcija GROUP BY Projekcija.FID ORDER BY 'broj' DESC LIMIT 1 ) 
+GROUP BY Naziv;
+f)
+
+g) SELECT Bioskop.Naziv as Grad from Projekcija,Sala,Bioskop  WHERE
+ Projekcija.Broj = Sala.Broj AND Sala.BID = Bioskop.BID AND (select max(BrojGledalaca) from Projekcija) = Projekcija.BrojGledalaca;
+h)
+
+i)select Bioskop.Naziv as Grad from Projekcija,Film,Sala, Bioskop,Grad where Projekcija.FID = Film.FID
+ AND  Sala.Broj = Projekcija.Broj AND Sala.BID = Bioskop.BID AND Grad.Naziv= Bioskop.Naziv
+AND (select count(DISTINCT Projekcija.FID) from Projekcija,Sala,Bioskop where Projekcija.Broj = Sala.Broj AND Sala.BID = Bioskop.BID
+ AND Bioskop.Naziv = Grad.Naziv)=(select count(*) from Film) group by Grad;
+
+j) select sum(BrojGledalaca) as UkupanBrojPosetilaca,Bioskop.Ime from Projekcija,Sala,Bioskop where Bioskop.BID = Sala.BID
+ AND  Projekcija.Broj = Sala.BRoj group by Sala.BID order By UkupanBrojPosetilaca DESC limit 1;
+
+
+
+
+2.
+a) Naći sale koje imaju kapacitet veći od 50 mjesta.
+b) Naći najveću salu.
+c) Naći bioskope koji imaju više od jedne sale.
+d) Naći bioskope u kojima je svaka projekcija imala više od 50 gledalaca.
+e) Naći film koji je makar jednom projektovan u svakom bioskopu.
+
+
+
+a) select * from Sala where kapacitet>50
+
+b)select * from Sala where kapacitet = (select max(kapacitet) from Sala);
+
+c)select * from Bioskop where  (select count(*) from Sala where Sala.BID = Bioskop.BID)>2;
+
+d)select * from Bioskop where (select count(*) from Projekcija,Sala WHERE
+BrojGledalaca>500 AND Projekcija.Broj = Sala.Broj AND Sala.BID = Bioskop.BID )  = (select count(*) from Projekcija,Sala where
+Projekcija.Broj = Sala.Broj AND Sala.BID = Bioskop.BID)
+
+e)select * from Film where
+(select count(distinct  Bioskop.BID) from Sala,Bioskop,Projekcija where Bioskop.BID = Sala.BID
+ AND Projekcija.Broj = Sala.Broj AND Film.FID = Projekcija.FID) = (select count(*) from Bioskop)
+
+
+
+
